@@ -1,0 +1,27 @@
+{
+  "name": "ts-datacontract",
+  "version": "1.0.0",
+  "description": "A library to help serialize/deserialize data between client and service.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "test": "mocha -r ts-node/register tests/**/*.ts",
+    "build": "tsc"
+  },
+  "keywords": [],
+  "author": "weijiang.xu@malong.com",
+  "license": "MIT",
+  "dependencies": {
+    "lodash": "^4.17.15"
+  },
+  "devDependencies": {
+    "@types/lodash": "^4.14.149",
+    "@types/chai": "^4.2.7",
+    "@types/mocha": "^5.2.7",
+    "chai": "^4.2.0",
+    "mocha": "^7.0.0",
+    "reflect-metadata": "^0.1.13",
+    "ts-node": "^8.6.2",
+    "typescript": "^3.7.5"
+  }
+}
