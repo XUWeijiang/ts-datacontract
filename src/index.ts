@@ -271,8 +271,6 @@ class Validator {
                 if (typeInfo.serialize_option & SerializeOption.DESERIALIZE_ONLY) {
                     ret[typeInfo.propertyName] = deserializeWithType(typeInfo, value[key], key);
                 }
-            } else {
-                ret[key] = value;
             }
         }
         return ret;

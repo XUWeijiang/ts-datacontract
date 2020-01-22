@@ -129,11 +129,58 @@ console.log(m.pageSize);   // Output: 10
 You can use `itemType` to specify item type of an array property. 
 You can use `keyType` and `valueType` to specify the key type and value type of a Map property.
 
-Please note that you *must* manually specify `itemType`, `keyType`, `valueType`,because those values can't be read with Typescript reflection.
+Please note that you *must* manually specify `itemType`, `keyType`, `valueType`,because those values can't be inferred from Typescript reflection.
+
+```typescript
+import { DataContract, DataMember } from "ts-datacontract";
+
+class SearchQuery extends DataContract {
+    @DataMember()
+    query: string;
+    @DataMember({itemType: String})
+    keywords: string[];
+    @DataMember({keyType: String, valueType: Number})
+    history: Map<string, number>;
+}
+const q = new SearchQuery();
+q.query = "query";
+q.keywords = ["key", "words"];
+q.history = new Map([['x', 100], ['y', 200]]);
+
+console.log(q.toJson());  // Output: {"query":"query","keywords":["key","words"],"history":{"x":100,"y":200}}
+
+const m = SearchQuery.fromJson(`{"query":"query","keywords":["key","words"],"history":{"x":100,"y":200}}`);
+console.log(m.query);      // Output: query
+console.log(m.keywords);   // Output: [ 'key', 'words' ]
+console.log(m.history);    // Output: Map { 'x' => 100, 'y' => 200 }
+
+```
 
 #### Serialization/Deserialization Customization
 
 You can use `serialize` and `deserialize` to customize serialization/deserialization of a DataContract property.
+
+```typescript
+import { DataContract, DataMember } from "ts-datacontract";
+
+class SearchQuery extends DataContract {
+    @DataMember()
+    query: string;
+    @DataMember({itemType: String, 
+        serialize: v => v.join(';'), 
+        deserialize: v => v.split(';')})
+    keywords: string[];
+}
+const q = new SearchQuery();
+q.query = "query";
+q.keywords = ["key", "words"];
+
+console.log(q.toJson());  // Output: {"query":"query","keywords":"key;words"}
+
+const m = SearchQuery.fromJson(`{"query":"query","keywords":"key;words"}`);
+console.log(m.query);      // Output: query
+console.log(m.keywords);   // Output: [ 'key', 'words' ]
+```
 
 #### Serialize/Deserialize only properties
 
@@ -143,9 +190,77 @@ You can use `serialize_option` to set a DataContract Property to be a serialize-
 
 We support DataContract inheritance. 
 
+```typescript
+import { DataContract, DataMember } from "ts-datacontract";
+
+class SearchQuery extends DataContract {
+    @DataMember()
+    query: string;
+}
+
+class PagedSearchQuery extends SearchQuery {
+    @DataMember()
+    pageIndex: number;
+    @DataMember()
+    pageSize: number;
+}
+
+const q = new PagedSearchQuery();
+q.query = "query";
+q.pageIndex = 1;
+q.pageSize = 10;
+console.log(q.toJson());  // Output: {"query":"query","pageIndex":1,"pageSize":10}
+
+const m = PagedSearchQuery.fromJson(`{"pageIndex":1,"pageSize":10,"query":"query"}`);
+console.log(m.query);      // Output: query
+console.log(m.pageIndex);  // Output: 1
+console.log(m.pageSize);   // Output: 10
+```
+
 #### Mixin Support
 
 We support Typescript Mixin style for DataContract.
 
+```typescript
+import { DataContract, DataMember } from "ts-datacontract";
+
+type MixinConstructor<T={}> = new(...args: any[]) => T;
+function PageMaxin<T extends MixinConstructor>(Base: T) {
+    class PageMaxinClass extends Base {
+        @DataMember()
+        pageIndex: number;
+        @DataMember()
+        pageSize: number
+    }
+    return PageMaxinClass;
+}
+
+function SearchMixin<T extends MixinConstructor>(Base: T) {
+    class SearchMixinClass extends Base {
+        @DataMember()
+        query: string;
+    }
+    return SearchMixinClass;
+}
+
+class PagedSearchQuery extends PageMaxin(SearchMixin(DataContract)) {
+}
+
+const q = new PagedSearchQuery();
+q.query = "query";
+q.pageIndex = 1;
+q.pageSize = 10;
+console.log(q.toJson());  // Output: {"query":"query","pageIndex":1,"pageSize":10}
+
+const m = PagedSearchQuery.fromJson(`{"pageIndex":1,"pageSize":10,"query":"query"}`);
+console.log(m.query);      // Output: query
+console.log(m.pageIndex);  // Output: 1
+console.log(m.pageSize);   // Output: 10
+```
 
 You can find more examples in tests/index.ts. 
+
+
+## Known Issues
+1. No union type support
+2. No enum support: Internally, there is no enum type in runtime. You should take enum type as its underneath type, and use `validate` to check the value is a valid enum value.
