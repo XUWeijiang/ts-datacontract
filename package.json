@@ -8,6 +8,10 @@
     "test": "mocha -r ts-node/register tests/**/*.ts",
     "build": "tsc"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/XUWeijiang/ts-datacontract.git"
+  },
   "keywords": [],
   "author": "weijiang.xu@malong.com",
   "license": "MIT",
