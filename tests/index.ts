@@ -32,6 +32,24 @@ describe('Basic Test', () => {
         const c2 = A.fromJson(jsonValue2);
         expect(c2.toObject()).to.eql(value);
     });
+    it('With default Value', () => {
+        class A extends DataContract {
+            @DataMember()
+            version: string;
+            @DataMember()
+            takes: number = 100;
+        }
+        const a = new A();
+        a.version = '4.0';
+        const value = { version: '4.0', takes: 100 };
+        expect(a.toObject()).to.eql(value);
+        const b = A.fromObject(value);
+        expect(b.version).to.eql('4.0');
+        expect(b.takes).to.eql(100);
+
+        const x = A.fromObject({version: '4.0', takes: 10});
+        expect(x.toObject()).to.eql({version: '4.0', takes: 10});
+    });
     it('With undefined Value', () => {
         class A extends DataContract {
             @DataMember()
