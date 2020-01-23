@@ -279,7 +279,7 @@ class Validator {
         let propertyMap: Map<string, ExtendedDataMemberProperty> 
             = Reflect.getMetadata(metadataPropertyKey, value);
         if (!propertyMap) {
-            return value;
+            return {};
         }
 
         const ret = {};
@@ -289,8 +289,6 @@ class Validator {
                 if (typeInfo.serialize_option & SerializeOption.SERIALIZE_ONLY) {
                     ret[typeInfo.name] = serializeWithType(typeInfo, value[key]);
                 }
-            } else {
-                ret[key] = value;
             }
         }
         return ret;

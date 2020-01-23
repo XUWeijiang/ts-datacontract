@@ -477,3 +477,28 @@ describe("Mixin", () => {
         });
     });
 })
+
+
+describe('Special Test', () => {
+    it('No decorator', () => {
+        class A extends DataContract {
+            version: string;
+            @DataMember()
+            takes: number;
+        }
+        const a = new A();
+        a.version = '4.0';
+        a.takes = 100;
+        const value = { version: '4.0', takes: 100 };
+        const jsonValue = `{"version":"4.0","takes":100}`;
+        expect(a.toObject()).to.eql({takes: 100 });
+        expect(a.toJson()).to.eql(`{"takes":100}`);
+
+        const b = A.fromObject(value);
+        expect(b.version).to.be.undefined;
+        expect(b.takes).to.eql(100);
+
+        const c = A.fromJson(jsonValue);
+        expect(c.toObject()).to.eql({takes: 100 });
+    });
+})
