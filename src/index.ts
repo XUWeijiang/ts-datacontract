@@ -51,6 +51,22 @@ function joinPath(...args: string[]) {
     return args.filter(k=>k).join('.');
 }
 
+function getMetadatas(metadataNameKey: any, target: any) {
+    let ret = new Map<string, ExtendedDataMemberProperty>();
+    while (target) {
+        const protoInfo: Map<string, ExtendedDataMemberProperty> = Reflect.getOwnMetadata(metadataNameKey, target);
+        if (protoInfo) {
+            for (const key of protoInfo.keys()) {
+                if (!ret.has(key)) {
+                    ret.set(key, protoInfo.get(key));
+                }
+            }
+        }
+        target = Object.getPrototypeOf(target);
+    }
+    return ret;
+}
+
 function findFirstInvalidPropertyWithType(typeInfo: DataMemberProperty, value: any, memberName = '')
     : [string|undefined, any] {
     if  (_.isNull(typeInfo) || _.isUndefined(typeInfo)) {
@@ -227,7 +243,7 @@ const metadataNameKey = Symbol('validator:name-index');
 class Validator {
     static register(target: any, property: any, meta: ExtendedDataMemberProperty) {
         {
-            let map = Reflect.getMetadata(metadataPropertyKey, target);
+            let map = Reflect.getOwnMetadata(metadataPropertyKey, target);
             if (!map) {
                 map = new Map();
                 Reflect.defineMetadata(metadataPropertyKey, map, target);
@@ -235,7 +251,7 @@ class Validator {
             map.set(property, meta);
         }
         {
-            let map = Reflect.getMetadata(metadataNameKey, target);
+            let map = Reflect.getOwnMetadata(metadataNameKey, target);
             if (!map) {
                 map = new Map();
                 Reflect.defineMetadata(metadataNameKey, map, target);
@@ -244,7 +260,7 @@ class Validator {
         }
     }
     static findFirstInvalidProperty(target: any): [string|undefined, any] {
-        let map = Reflect.getMetadata(metadataPropertyKey, target);
+        let map = getMetadatas(metadataPropertyKey, target);
         if (!map) {
             return [undefined, undefined];
         }
@@ -260,7 +276,7 @@ class Validator {
     static deserialize(target: any, value: Record<string, any>) {
         const ret = new target();
 
-        let nameMap: Map<string, ExtendedDataMemberProperty> = Reflect.getMetadata(metadataNameKey, ret);
+        let nameMap: Map<string, ExtendedDataMemberProperty> = getMetadatas(metadataNameKey, ret);
         if (!nameMap) {
             return Object.assign(ret, value);
         }
@@ -277,7 +293,7 @@ class Validator {
     }
     static serialize(value: Record<string, any>) {
         let propertyMap: Map<string, ExtendedDataMemberProperty> 
-            = Reflect.getMetadata(metadataPropertyKey, value);
+            = getMetadatas(metadataPropertyKey, value);
         if (!propertyMap) {
             return {};
         }
@@ -319,7 +335,7 @@ export function DataMember({
 
 export class DataContract {
     public static fromObject<T extends typeof DataContract>(this: T, obj: any): InstanceType<T> {
-        return Validator.deserialize(this, obj);
+        return Validator.deserialize(this.resolveType(obj), obj);
     }
     public static fromJson<T extends typeof DataContract>(this: T, json: string): InstanceType<T> {
         return this.fromObject(JSON.parse(json));
@@ -338,5 +354,8 @@ export class DataContract {
     }
     public toJson<T extends DataContract>(this: T) {
         return JSON.stringify(this.toObject());
+    }
+    public static resolveType(obj: Record<string, any>): any {
+        return this;
     }
 }

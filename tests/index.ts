@@ -31,6 +31,9 @@ describe('Basic Test', () => {
 
         const c2 = A.fromJson(jsonValue2);
         expect(c2.toObject()).to.eql(value);
+
+        const c3 = DataContract.fromObject(value2);
+        expect(c3.toObject()).to.eql({});
     });
     it('With default Value', () => {
         class A extends DataContract {
@@ -422,6 +425,82 @@ describe("Subclass", () => {
         expect(()=>a.validate()).to.throw(InvalidValueError).that.satisfies(function (error) {
             return error.memberName === 'y' && error.memberValue === -1;
         });
+    });
+    it('Override', ()=> {
+        class A extends Base {
+            @DataMember({name: 'ay'})
+            y: number;
+        }
+        const a = new A();
+        a.x = 'x';
+        a.y = 2;
+
+        expect(a.findFirstInvalidProperty()).to.be.undefined;
+
+        const value = { x: 'x', ay: 2 };
+        const jsonValue = `{"x":"x","ay":2}`;
+        expect(a.toObject()).to.eql(value);
+        expect(a.toJson()).to.eql(jsonValue);
+
+        a.y = -1;
+        expect(a.findFirstInvalidProperty()).to.be.undefined;
+    });
+    it('Select Type', ()=> {
+        class Base extends DataContract {
+            @DataMember()
+            type: string;
+
+            public static resolveType(obj: Record<string, any>) {
+                if (!obj || !obj.type) {
+                    return this;
+                }
+                if (obj.type === 'A') {
+                    return A;
+                } else {
+                    return B;
+                }
+            }
+        }
+
+        class A extends Base {
+            @DataMember()
+            a: string;
+
+            constructor() {
+                super();
+                this.type = 'A';
+            }
+        }
+
+        class B extends Base {
+            @DataMember()
+            b: number;
+
+            constructor() {
+                super();
+                this.type = 'B';
+            }
+        }
+
+        class Holder extends DataContract {
+            @DataMember({itemType: Base})
+            data: Base[] = [];
+        }
+        const h = new Holder();
+        h.data.push(A.fromObject({a: 'a'}));
+        h.data.push(B.fromObject({b: 1}));
+
+        const expectedObj = { data: [ { type: 'A', a: 'a' }, { type: 'B', b: 1 } ] };
+        const expectedJson = `{"data":[{"type":"A","a":"a"},{"type":"B","b":1}]}`;
+        expect(h.toObject()).to.eql(expectedObj);
+        expect(h.toJson()).to.equal(expectedJson);
+
+        const h2 = Holder.fromObject(expectedObj);
+        expect(h2.data.length).to.equal(2);
+        expect(h2.data[0].type).to.equal('A');
+        expect((h2.data[0] as A).a).to.equal('a');
+        expect(h2.data[1].type).to.equal('B');
+        expect((h2.data[1] as B).b).to.equal(1);
     });
 })
 
