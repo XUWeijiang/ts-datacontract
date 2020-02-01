@@ -43,8 +43,8 @@ export class InvalidValueError extends Error {
     }
 }
 
-function IsDataContractClass(type: any) {
-    return Object.create(type.prototype) instanceof DataContract;
+function IsDataContractClass(type: Function) {
+    return type === DataContract || type.prototype instanceof DataContract;
 }
 
 function joinPath(...args: string[]) {
@@ -241,7 +241,7 @@ const metadataPropertyKey = Symbol('validator:property-index');
 const metadataNameKey = Symbol('validator:name-index');
 
 class Validator {
-    static register(target: any, property: any, meta: ExtendedDataMemberProperty) {
+    static register(target: any, property: string, meta: ExtendedDataMemberProperty) {
         {
             let map = Reflect.getOwnMetadata(metadataPropertyKey, target);
             if (!map) {
@@ -334,28 +334,28 @@ export function DataMember({
 }
 
 export class DataContract {
-    public static fromObject<T extends typeof DataContract>(this: T, obj: any): InstanceType<T> {
+    public static fromObject<T extends typeof DataContract>(this: T, obj: Record<string, any>): InstanceType<T> {
         return Validator.deserialize(this.resolveType(obj), obj);
     }
     public static fromJson<T extends typeof DataContract>(this: T, json: string): InstanceType<T> {
         return this.fromObject(JSON.parse(json));
     }
-    public findFirstInvalidProperty<T extends DataContract>(this: T) {
+    public findFirstInvalidProperty() {
         return Validator.findFirstInvalidProperty(this)[0];
     }
-    public validate<T extends DataContract>(this: T) {
+    public validate() {
         const [invalidMember, invalidValue] = Validator.findFirstInvalidProperty(this);
         if (invalidMember) {
             throw new InvalidValueError(invalidMember, invalidValue);
         }
     }
-    public toObject<T extends DataContract>(this: T) {
+    public toObject() {
         return Validator.serialize(this);
     }
-    public toJson<T extends DataContract>(this: T) {
+    public toJson() {
         return JSON.stringify(this.toObject());
     }
-    public static resolveType(obj: Record<string, any>): any {
+    public static resolveType(obj: Record<string, any>): typeof DataContract {
         return this;
     }
 }

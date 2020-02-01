@@ -450,7 +450,7 @@ describe("Subclass", () => {
             @DataMember()
             type: string;
 
-            public static resolveType(obj: Record<string, any>) {
+            public static resolveType(obj: Record<string, any>): typeof Base {
                 if (!obj || !obj.type) {
                     return this;
                 }
