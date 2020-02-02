@@ -1,3 +1,5 @@
+![Node.js CI](https://github.com/XUWeijiang/ts-datacontract/workflows/Node.js%20CI/badge.svg)
+
 DataContract is a library for Typescript to serialize/deserialize data using [decorators](https://github.com/Microsoft/TypeScript-Handbook/blob/master/pages/Decorators.md) syntax in a type-safe way. It also supports value validation. 
 
 ## Installation
