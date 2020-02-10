@@ -43,7 +43,7 @@ export class InvalidValueError extends Error {
     }
 }
 
-function IsDataContractClass(type: Function) {
+function isDataContractClass(type: Function) {
     return type === DataContract || type.prototype instanceof DataContract;
 }
 
@@ -51,7 +51,7 @@ function joinPath(...args: string[]) {
     return args.filter(k=>k).join('.');
 }
 
-function getMetadatas(metadataNameKey: any, target: any) {
+function getMetadatas<T extends DataContract>(metadataNameKey: Symbol, target: any) {
     let ret = new Map<string, ExtendedDataMemberProperty>();
     while (target) {
         const protoInfo: Map<string, ExtendedDataMemberProperty> = Reflect.getOwnMetadata(metadataNameKey, target);
@@ -129,7 +129,7 @@ function findFirstInvalidPropertyWithType(typeInfo: DataMemberProperty, value: a
                     }
                 }
             }
-        } else if (IsDataContractClass(type)) {
+        } else if (isDataContractClass(type)) {
             const [errorMemberName, errorValue] = Validator.findFirstInvalidProperty(value);
             if (errorMemberName) {
                 return [joinPath(memberName, errorMemberName), errorValue];
@@ -204,7 +204,7 @@ function deserializeWithType(typeInfo: DataMemberProperty, value: any, memberNam
         }
         return map;
 
-    } else if (IsDataContractClass(type)) {
+    } else if (isDataContractClass(type)) {
         return type.fromObject(value);
     } else {
         return value;
