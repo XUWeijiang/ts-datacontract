@@ -51,7 +51,7 @@ function joinPath(...args: string[]) {
     return args.filter(k=>k).join('.');
 }
 
-function getMetadatas<T extends DataContract>(metadataNameKey: Symbol, target: any) {
+function getMetadatas(metadataNameKey: Symbol, target: any) {
     let ret = new Map<string, ExtendedDataMemberProperty>();
     while (target) {
         const protoInfo: Map<string, ExtendedDataMemberProperty> = Reflect.getOwnMetadata(metadataNameKey, target);
