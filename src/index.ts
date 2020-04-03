@@ -23,6 +23,7 @@ export interface DataMemberProperty {
     serialize?: SerializeType;          // customized serialize function
     required?: boolean;                 // set to true if the member can't be undefined or null.
     serialize_option?: SerializeOption; // serialize option.
+    [kwargs: string]: any;              // additional keyword-value arguments.    
 }
 
 export enum SerializeOption {
@@ -66,6 +67,18 @@ function getMetadatas(metadataNameKey: Symbol, target: any) {
     }
     return ret;
 }
+
+function getMetadata(metadataNameKey: Symbol, target: any, propertyKey: string) {
+    while (target) {
+        const protoInfo: Map<string, ExtendedDataMemberProperty> = Reflect.getOwnMetadata(metadataNameKey, target);
+        if (protoInfo && protoInfo.has(propertyKey)) {
+            return protoInfo.get(propertyKey);
+        }
+        target = Object.getPrototypeOf(target);
+    }
+    return undefined
+}
+
 
 function findFirstInvalidPropertyWithType(typeInfo: DataMemberProperty, value: any, memberName = '')
     : [string|undefined, any] {
@@ -309,12 +322,16 @@ class Validator {
         }
         return ret;
     }
+    static getPropertyMetadata(target: any, propertyKey: string) {
+        return getMetadata(metadataPropertyKey, target, propertyKey);
+    }
 }
 
 export function DataMember({
         name, type, itemType, keyType, valueType, 
         serialize, deserialize, validate, 
-        required, serialize_option=SerializeOption.BOTH
+        required, serialize_option=SerializeOption.BOTH,
+        ...kwargs
     }: DataMemberProperty = {}) {
     return function(target: any, property: string) {
         Validator.register(target, property, {
@@ -329,6 +346,7 @@ export function DataMember({
             name: name || property,
             propertyName: property,
             required: required,
+            kwargs: kwargs || {}
         });
     }
 }
@@ -357,5 +375,8 @@ export class DataContract {
     }
     public static resolveType(obj: Record<string, any>): typeof DataContract {
         return this;
+    }
+    public static getDataMemberInfo<T extends typeof DataContract>(this: T, key:  keyof Omit<InstanceType<T>, keyof DataContract>): DataMemberProperty {
+        return Validator.getPropertyMetadata(this.prototype, <any>key);
     }
 }

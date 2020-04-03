@@ -128,9 +128,15 @@ describe('Basic Test', () => {
         class A extends DataContract {
             @DataMember()
             version: string;
-            @DataMember({name: "alias"})
+            @DataMember({name: "alias", index: true})
             takes: number;
         }
+        expect(A.getDataMemberInfo("takes").name).to.eql('alias');
+        expect(A.getDataMemberInfo("takes").kwargs.index).to.eql(true);
+        expect(A.getDataMemberInfo("takes").kwargs.db).to.be.undefined
+        expect(A.getDataMemberInfo("version").kwargs.index).to.be.undefined
+        expect(A.getDataMemberInfo(<any>'alias')).to.be.undefined
+
         const a = new A();
         a.version = '4.0';
         a.takes = 100;
@@ -392,14 +398,19 @@ describe("Subclass", () => {
     class Base extends DataContract {
         @DataMember()
         x: string;
-        @DataMember({validate: k => k > 0})
+        @DataMember({validate: k => k > 0, index: true})
         y: number;
     }
     it('Normal', ()=> {
         class A extends Base {
-            @DataMember()
+            @DataMember({db: 'db'})
             version: string;
         }
+
+        expect(A.getDataMemberInfo("y").kwargs.index).to.eql(true);
+        expect(A.getDataMemberInfo("y").kwargs.db).to.be.undefined;
+        expect(A.getDataMemberInfo("version").kwargs.db).to.eql('db');
+
         const a = new A();
         a.version = '4.0';
         a.x = 'x';
@@ -428,9 +439,11 @@ describe("Subclass", () => {
     });
     it('Override', ()=> {
         class A extends Base {
-            @DataMember({name: 'ay'})
+            @DataMember({name: 'ay', index: 'new_index'})
             y: number;
         }
+        expect(A.getDataMemberInfo("y").kwargs.index).to.eql('new_index');
+
         const a = new A();
         a.x = 'x';
         a.y = 2;
@@ -527,6 +540,7 @@ describe("Mixin", () => {
             @DataMember()
             version: string;
         }
+        expect(A.getDataMemberInfo("pageSize").name).to.eql('page_size');
         const a = new A();
         a.version = '4.0';
         a.query = 'q';
